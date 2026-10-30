@@ -1,0 +1,11 @@
+{
+  "DBInstances": [
+    {
+      "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:demo-db",
+      "DBInstanceIdentifier": "demo-db",
+      "Engine": "postgres",
+      "EngineVersion": "16.4",
+      "Endpoint": {"Address": "synthetic-db.example.invalid", "Port": 5432}
+    }
+  ]
+}

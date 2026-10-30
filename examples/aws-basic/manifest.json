@@ -1,0 +1,35 @@
+{
+  "schema_version": "1",
+  "exports": [
+    {
+      "operation": "ecs.describe-task-definition",
+      "file": "task-definition.json",
+      "resource": "arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+      "region": "us-east-1"
+    },
+    {
+      "operation": "ecs.describe-services",
+      "file": "services.json",
+      "resource": "arn:aws:ecs:us-east-1:123456789012:service/demo/app",
+      "region": "us-east-1"
+    },
+    {
+      "operation": "rds.describe-db-instances",
+      "file": "db-instances.json",
+      "resource": "arn:aws:rds:us-east-1:123456789012:db:demo-db",
+      "region": "us-east-1"
+    },
+    {
+      "operation": "s3.get-bucket-versioning",
+      "file": "bucket-versioning.json",
+      "resource": "demo-bucket-synthetic",
+      "region": "us-east-1"
+    },
+    {
+      "operation": "s3.get-bucket-encryption",
+      "file": "bucket-encryption.json",
+      "resource": "demo-bucket-synthetic",
+      "region": "us-east-1"
+    }
+  ]
+}

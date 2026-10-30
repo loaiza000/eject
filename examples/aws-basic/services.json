@@ -1,0 +1,9 @@
+{
+  "services": [
+    {
+      "serviceArn": "arn:aws:ecs:us-east-1:123456789012:service/demo/app",
+      "serviceName": "app",
+      "taskDefinition": "arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1"
+    }
+  ]
+}

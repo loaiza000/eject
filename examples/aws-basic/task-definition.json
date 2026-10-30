@@ -1,0 +1,16 @@
+{
+  "taskDefinition": {
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+    "family": "demo",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+      {
+        "name": "app",
+        "image": "public.ecr.aws/docker/library/nginx:1.27",
+        "portMappings": [{"containerPort": 8080, "protocol": "tcp"}],
+        "environment": [{"name": "DATABASE_HOST", "value": "synthetic.example.invalid"}],
+        "secrets": [{"name": "DATABASE_PASSWORD", "valueFrom": "synthetic-secret-reference"}]
+      }
+    ]
+  }
+}
