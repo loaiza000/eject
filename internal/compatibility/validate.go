@@ -76,8 +76,8 @@ func ValidateSource(infra domain.Infrastructure) error {
 				if len(r.Properties) > 0 {
 					return fmt.Errorf("unexpected properties for %q", r.ID)
 				}
+			}
 		}
-	}
 	}
 	return nil
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/loaiza000/eject/internal/domain"
 	"github.com/loaiza000/eject/internal/generator"
+	"github.com/loaiza000/eject/internal/securefs"
 	"github.com/spf13/cobra"
 )
 
@@ -150,6 +151,9 @@ func writeBundle(ctx context.Context, path string, bundle generator.Bundle) erro
 		return err
 	}
 	defer projectRoot.Close()
+	if err := securefs.ProtectDirectory(projectRoot, abs); err != nil {
+		return fmt.Errorf("protect new output directory: %w", err)
+	}
 	for _, key := range keys {
 		if key == "generation.json" {
 			continue
@@ -194,6 +198,9 @@ func writeGeneratedFile(root *os.Root, name string, data []byte) error {
 }
 
 func compareBundle(path string, files map[string][]byte) error {
+	if err := securefs.CheckPrivate(path); err != nil {
+		return fmt.Errorf("existing output has unsafe access permissions: %w", err)
+	}
 	parent, err := os.OpenRoot(filepath.Dir(path))
 	if err != nil {
 		return err
@@ -223,6 +230,9 @@ func compareBundle(path string, files map[string][]byte) error {
 		want, ok := files[entry.Name()]
 		if !ok || !entry.Type().IsRegular() {
 			return errors.New("output directory contains an unexpected or unsafe file")
+		}
+		if err := securefs.CheckPrivate(filepath.Join(path, entry.Name())); err != nil {
+			return fmt.Errorf("existing output has unsafe file permissions: %w", err)
 		}
 		f, err := root.Open(entry.Name())
 		if err != nil {

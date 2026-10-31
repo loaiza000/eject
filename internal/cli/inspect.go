@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/loaiza000/eject/internal/discovery/aws"
+	"github.com/loaiza000/eject/internal/securefs"
 	"github.com/spf13/cobra"
 )
 
@@ -66,15 +67,11 @@ func writeOutput(path string, data []byte, force bool) error {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(dir, ".eject-*.tmp")
+	tmp, err := securefs.CreateTemp(dir, ".eject-*.tmp")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tmp.Name())
-	if err := tmp.Chmod(0600); err != nil {
-		tmp.Close()
-		return err
-	}
 	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
 		return err

@@ -9,6 +9,7 @@ import (
 
 	"github.com/loaiza000/eject/internal/domain"
 	"github.com/loaiza000/eject/internal/generator"
+	"github.com/loaiza000/eject/internal/securefs"
 )
 
 func staticFixture(t *testing.T) (string, generator.Bundle) {
@@ -26,6 +27,17 @@ func staticFixture(t *testing.T) (string, generator.Bundle) {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := securefs.ProtectDirectory(root, dir); err != nil {
+		root.Close()
+		t.Fatal(err)
+	}
+	if err := root.Close(); err != nil {
+		t.Fatal(err)
+	}
 	for name, content := range bundle.Files {
 		if err := os.WriteFile(filepath.Join(dir, name), content, 0600); err != nil {
 			t.Fatal(err)

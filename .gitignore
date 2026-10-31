@@ -4,5 +4,10 @@
 /*.out
 /.eject/
 /output/
+/examples/demo/bin/
+/examples/demo/output/
+/examples/demo/generated/
+/dist/
+**/.env
 /.tools/
 /go1.27.3.windows-amd64.zip

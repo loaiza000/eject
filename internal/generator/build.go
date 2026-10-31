@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	versionPattern  = regexp.MustCompile(`^[0-9]+\.[0-9]+(?:\.[0-9]+)?$`)
+	versionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+(?:\.[0-9]+)?$`)
 )
 
 // Bundle contains only local files. Building it has no external side effects.

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/loaiza000/eject/internal/generator"
+	"github.com/loaiza000/eject/internal/securefs"
 	"gopkg.in/yaml.v3"
 )
 
@@ -260,16 +261,11 @@ func writeHTTPOverride(checks []httpCheck) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	f, err := os.CreateTemp("", "eject-verify-*.yaml")
+	f, err := securefs.CreateTemp("", "eject-verify-*.yaml")
 	if err != nil {
 		return "", err
 	}
-	if err := f.Chmod(0600); err != nil {
-        _ = f.Close()
-        _ = os.Remove(f.Name())
-        return "", err
-    }
-    if _, err := f.Write(data); err != nil {
+	if _, err := f.Write(data); err != nil {
 		_ = f.Close()
 		_ = os.Remove(f.Name())
 		return "", err

@@ -6,11 +6,13 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
 
 	"github.com/loaiza000/eject/internal/generator"
+	"github.com/loaiza000/eject/internal/securefs"
 )
 
 type Status string
@@ -75,6 +77,10 @@ func Static(ctx context.Context, project string, bundle generator.Bundle) Report
 	r.Add("PLAN_COHERENCE", Passed, "Embedded plan, resources and rule results were recalculated.")
 	seen := map[string]bool{}
 	markerValid := false
+	aclValid := true
+	if runtime.GOOS == "windows" && securefs.CheckPrivate(project) != nil {
+		aclValid = false
+	}
 	for _, entry := range entries {
 		if err := ctx.Err(); err != nil {
 			r.Add("INTERRUPTED", Failed, "Verification was interrupted.")
@@ -91,8 +97,10 @@ func Static(ctx context.Context, project string, bundle generator.Bundle) Report
 				} else {
 					r.Add("LOCAL_ENV", NotVerified, "Private .env values are intentionally not inspected.")
 				}
+			} else if err := securefs.CheckPrivate(filepath.Join(project, name)); err != nil {
+				r.Add("LOCAL_ENV", Failed, "Private .env grants access outside the local user and system administrators.")
 			} else {
-                r.Add("LOCAL_ENV", NotVerified, "Private .env values and Windows ACLs are not inspected.")
+				r.Add("LOCAL_ENV", NotVerified, "Private .env values are intentionally not inspected.")
 			}
 			continue
 		}
@@ -102,6 +110,9 @@ func Static(ctx context.Context, project string, bundle generator.Bundle) Report
 			continue
 		}
 		seen[name] = true
+		if runtime.GOOS == "windows" && securefs.CheckPrivate(filepath.Join(project, name)) != nil {
+			aclValid = false
+		}
 		f, err := root.Open(name)
 		if err != nil {
 			r.Add("FILE_READ", Failed, "Cannot read "+name)
@@ -144,9 +155,13 @@ func Static(ctx context.Context, project string, bundle generator.Bundle) Report
 		r.Add("REFERENCES_AND_VARIABLES", Passed, "Compose services, variables and dependencies match the recalculated plan.")
 		r.Add("GENERATED_SECRETS", Passed, "No credential pattern found in generated files; private .env content was not inspected.")
 	}
-    if runtime.GOOS == "windows" {
-        r.Add("WINDOWS_ACL", NotVerified, "Go mode bits do not establish restrictive Windows ACLs; inspect inherited permissions separately.")
-    }
+	if runtime.GOOS == "windows" {
+		if aclValid {
+			r.Add("WINDOWS_ACL", Passed, "Generated files grant access only to the current user, LocalSystem and Administrators.")
+		} else {
+			r.Add("WINDOWS_ACL", Failed, "Project or generated file grants access outside the private Windows trustee set.")
+		}
+	}
 	r.Add("APPLICATION_BEHAVIOR", NotVerified, "Static checks do not establish application behavior or data equivalence.")
 	return r
 }
