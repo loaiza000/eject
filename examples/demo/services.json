@@ -1,0 +1,9 @@
+{
+  "services": [
+    {
+      "serviceArn": "arn:aws:ecs:us-east-1:123456789012:service/eject-demo/backend",
+      "serviceName": "backend",
+      "taskDefinition": "arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1"
+    }
+  ]
+}

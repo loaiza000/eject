@@ -28,6 +28,6 @@ func New(version string) *cobra.Command {
 		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 	}
 	root.SetVersionTemplate(fmt.Sprintf("eject %s\n", version))
-	root.AddCommand(newVersion(version), newDoctor(version), newInspect(), newPlan(), newGenerate())
+	root.AddCommand(newVersion(version), newDoctor(version), newInspect(), newPlan(), newGenerate(), newVerify())
 	return root
 }

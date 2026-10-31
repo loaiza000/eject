@@ -1,0 +1,8 @@
+{
+  "schema_version": "1",
+  "exports": [
+    {"operation": "ecs.describe-task-definition", "file": "task-definition.json", "resource": "arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1", "region": "us-east-1"},
+    {"operation": "ecs.describe-services", "file": "services.json", "resource": "arn:aws:ecs:us-east-1:123456789012:service/eject-demo/backend", "region": "us-east-1"},
+    {"operation": "rds.describe-db-instances", "file": "db-instances.json", "resource": "arn:aws:rds:us-east-1:123456789012:db:eject-demo-db", "region": "us-east-1"}
+  ]
+}

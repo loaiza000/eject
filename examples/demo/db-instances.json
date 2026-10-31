@@ -1,0 +1,11 @@
+{
+  "DBInstances": [
+    {
+      "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:eject-demo-db",
+      "DBInstanceIdentifier": "eject-demo-db",
+      "Engine": "postgres",
+      "EngineVersion": "16.4",
+      "Endpoint": {"Address": "synthetic-db.invalid", "Port": 5432}
+    }
+  ]
+}
