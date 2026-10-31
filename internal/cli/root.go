@@ -21,13 +21,13 @@ func New(version string) *cobra.Command {
 	root := &cobra.Command{
 		Use:               "eject",
 		Short:             "Inspect cloud infrastructure for portable deployment",
-		Long:              "EJECT is a local, offline-first cloud portability CLI. It inspects selected AWS CLI JSON snapshots and assesses Compose compatibility with a versioned migration proposal.",
+		Long:              "EJECT is a local, offline-first cloud portability CLI. It inspects selected AWS CLI JSON snapshots, assesses Compose compatibility, and generates a local configuration proposal.",
 		SilenceUsage:      true,
 		SilenceErrors:     true,
 		Version:           version,
 		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 	}
 	root.SetVersionTemplate(fmt.Sprintf("eject %s\n", version))
-	root.AddCommand(newVersion(version), newDoctor(version), newInspect(), newPlan())
+	root.AddCommand(newVersion(version), newDoctor(version), newInspect(), newPlan(), newGenerate())
 	return root
 }

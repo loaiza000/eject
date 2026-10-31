@@ -1,0 +1,81 @@
+{
+  "schema_version": "1",
+  "status": "PARTIAL",
+  "included": [
+    "aws:us-east-1:database:arn:aws:rds:us-east-1:123456789012:db:demo-db"
+  ],
+  "excluded": [
+    "aws:us-east-1:bucket:demo-bucket-synthetic",
+    "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+    "aws:us-east-1:service:arn:aws:ecs:us-east-1:123456789012:service/demo/app",
+    "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1"
+  ],
+  "blockers": [
+    {
+      "code": "S3_BACKEND_UNSUPPORTED",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "description": "Select and validate a storage target separately."
+    },
+    {
+      "code": "S3_DATA_AND_IAM_REVIEW",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "description": "Inventory objects and review access controls outside EJECT."
+    },
+    {
+      "code": "ECS_SECRET_MAPPING_REQUIRED",
+      "resource": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "description": "Provide a secret through an approved local mechanism; do not put it in the plan."
+    },
+    {
+      "code": "RDS_DATA_MIGRATION_REQUIRED",
+      "resource": "aws:us-east-1:database:arn:aws:rds:us-east-1:123456789012:db:demo-db",
+      "description": "Design, test and execute a separate data migration and cutover."
+    }
+  ],
+  "manual_actions": [
+    {
+      "code": "S3_DATA_AND_IAM_REVIEW",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "description": "Inventory objects and review access controls outside EJECT."
+    },
+    {
+      "code": "S3_ENCRYPTION_REVIEW",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "description": "Review key management and encryption at the chosen destination."
+    },
+    {
+      "code": "S3_VERSIONING_REVIEW",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "description": "Decide how to preserve version history and delete behavior."
+    },
+    {
+      "code": "ECS_ENV_VALUE_REQUIRED",
+      "resource": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "description": "Provide the value through a secure local mechanism."
+    },
+    {
+      "code": "ECS_SECRET_MAPPING_REQUIRED",
+      "resource": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "description": "Provide a secret through an approved local mechanism; do not put it in the plan."
+    },
+    {
+      "code": "RDS_DATA_MIGRATION_REQUIRED",
+      "resource": "aws:us-east-1:database:arn:aws:rds:us-east-1:123456789012:db:demo-db",
+      "description": "Design, test and execute a separate data migration and cutover."
+    },
+    {
+      "code": "ECS_NETWORK_REVIEW",
+      "resource": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+      "description": "Design Compose networks and access controls manually."
+    }
+  ],
+  "limitations": [
+    "A valid Compose configuration would not prove application or data equivalence.",
+    "Compose bridge networking does not reproduce ECS awsvpc, IAM, scaling or load balancing.",
+    "Database data migration, rollback and cutover are not implemented.",
+    "No data or secrets are transferred. Generated files must be reviewed before running Docker Compose.",
+    "No host ports are published; container ports are only exposed within the Compose network.",
+    "PostgreSQL image uses the source major version only; verify patch version, extensions and settings before use.",
+    "S3 objects, version history, IAM and policies are not migrated or mapped."
+  ]
+}

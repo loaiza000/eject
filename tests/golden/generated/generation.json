@@ -1,0 +1,11 @@
+{
+  "schema_version": "1",
+  "status": "PARTIAL",
+  "files": {
+    ".env.example": "ece8a5edca9dd2e5f2a5a421c656b06a19a7023be7bdf40c9f5acbe8798fee3f",
+    "README.md": "d32f0864caf2528cf8d720475a9d1273235b147fe4c459dc7ac1357c6748084c",
+    "compose.yaml": "cacd4c6909403f2228585216291b2dfbe9a41fdb5a6f8bed8d0a7070b64c787c",
+    "limitations.json": "07c6fb8c20b7e28c51acc40f3acdd951b390835f4a0d60d938869b857e5a1b3c",
+    "plan.json": "3bb7452d8f391a5c8338688c2f578fc2cde8dd3e019dc42fa71dc908517f50e3"
+  }
+}
