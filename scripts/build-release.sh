@@ -58,8 +58,16 @@ for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 wi
   mkdir "$package"
   cp "$output" "$package/$binary"
   for file in "${legal[@]}"; do cp "$outdir/$file" "$package/$file"; done
-  if [[ "$os" != windows ]]; then chmod 755 "$package/$binary"; fi
-  ( cd "$package" && tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -cf - "$binary" "${legal[@]}" ) | gzip -n > "$outdir/eject_${version}_${os}_${arch}.tar.gz"
+  archive_tar="$(pwd)/$outdir/.package.tar"
+  binary_mode=755
+  if [[ "$os" == windows ]]; then binary_mode=644; fi
+  (
+    cd "$package"
+    tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner --mode="$binary_mode" -cf "$archive_tar" "$binary"
+    tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner --mode=644 -rf "$archive_tar" "${legal[@]}"
+  )
+  gzip -n < "$archive_tar" > "$outdir/eject_${version}_${os}_${arch}.tar.gz"
+  rm "$archive_tar"
   rm "$package/$binary"
   for file in "${legal[@]}"; do rm "$package/$file"; done
   rmdir "$package"
