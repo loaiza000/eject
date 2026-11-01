@@ -11,3 +11,8 @@ All notable changes to this project will be documented here. The format follows 
 - Compose compatibility assessment and versioned `plan` output, without migration execution.
 - Version 2 plans with embedded source inventory and `generate` for local Compose proposals, YAML validation, and limitations reports.
 - Versioned generation marker and `verify` with offline integrity checks, opt-in isolated Docker runtime checks, and a synthetic HTTP/PostgreSQL demo.
+
+### Fixed
+
+- Reject symlinked parent directories for JSON output and symlinked destinations with `--force`.
+- Preserve executable modes for Unix binaries inside release archives.

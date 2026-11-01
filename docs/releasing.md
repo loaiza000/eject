@@ -16,14 +16,16 @@ This is a preparation checklist, not authorization to publish. EJECT v0.1.0 must
 
 ## Review and commit proposal
 
-The first commit `6d16d16` contains Phase 0–1 and was published unchanged to `origin/main` before the review branch was created. The subsequent work is organized as four coherent commits in one pull request, without rewriting that history:
+The first commit `6d16d16` contains Phase 0–1 and was published unchanged to `origin/main` before the review branch was created. Four phase and hardening commits establish the review branch, followed by focused corrective commits; no published history was rewritten:
 
 1. `feat: add compatibility assessment and versioned migration plans` — Phase 2 rules, plan v2, tests, fixtures, and docs.
 2. `feat: generate guarded Docker Compose proposals` — Phase 3 generator, marker, golden output, tests, and docs.
 3. `feat: verify generated projects and runtime behavior` — Phase 4 static/runtime verification, demo, fault tests, and verification documentation.
 4. `fix: protect Windows artifacts and prepare v0.1.0 release` — protected ACLs, permission tests, CI, security review, and release documentation.
 
-Review each commit's diff, especially shared documentation and `go.mod`. Open a **draft** pull request from `codex/v0.1.0` into `main`; request code and security review. The local draft body is `.eject/pr-v0.1.0-draft.md` and is ignored by Git. Treat CI results and the reviewed diff as the release evidence. Do not label a local test run as a successful GitHub Actions run.
+The follow-up commits harden symlinked output paths, expand HTTP runtime checks, add a nonpublishable packaging smoke test, and preserve executable modes in Unix archives. Review them with the four foundation commits.
+
+Review each commit's diff, especially shared documentation and `go.mod`. Draft pull request #1 is open from `codex/v0.1.0` into `main` for code and security review. The local draft body is `.eject/pr-v0.1.0-draft.md` and is ignored by Git. Treat CI results and the reviewed diff as the release evidence. Do not label a local test run as a successful GitHub Actions run.
 
 ## Assets and publication
 
