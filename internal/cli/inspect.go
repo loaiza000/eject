@@ -64,7 +64,22 @@ func writeOutput(path string, data []byte, force bool) error {
 		return err
 	}
 	dir := filepath.Dir(path)
+	for current := dir; ; current = filepath.Dir(current) {
+		info, err := os.Lstat(current)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		if err == nil && info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("symlink in output path: %s", current)
+		}
+		if next := filepath.Dir(current); next == current {
+			break
+		}
+	}
 	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+	if err := rejectSymlinkPath(dir); err != nil {
 		return err
 	}
 	tmp, err := securefs.CreateTemp(dir, ".eject-*.tmp")

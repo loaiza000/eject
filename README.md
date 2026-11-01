@@ -22,6 +22,8 @@ go build -o eject ./cmd/eject
 
 On Windows, build with `go build -o eject.exe ./cmd/eject` and run `./eject.exe`.
 
+When a reviewed release is published, download the archive for your OS and architecture from GitHub Releases. Check its SHA-256 hash against the release `SHA256SUMS`, then extract it with `tar -xzf eject_v0.1.0_<os>_<arch>.tar.gz` (PowerShell also provides `tar`). Run `eject version` from the extracted directory. No v0.1.0 assets are published yet; source builds remain the installation method until the release gate is complete.
+
 Generated files use restricted Unix modes or protected Windows ACLs. Windows verification rejects existing projects and private `.env` files that grant access beyond the current user, LocalSystem and Administrators; see [security](docs/security.md).
 
 `doctor` reports the Go runtime, platform, and whether a Docker executable is on `PATH`. It does not contact Docker, AWS, or the network. Finding Docker does not prove Docker Compose works.

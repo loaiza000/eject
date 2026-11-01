@@ -3,6 +3,9 @@ package verification
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -142,6 +145,60 @@ func TestRuntimeCancellationAndTimeout(t *testing.T) {
 			runtimeWithCommand(ctx, t.TempDir(), runtimeFixture(), false, nil, command, &report)
 			if !reportHas(report, tc.code, Failed) {
 				t.Fatalf("interruption not reported: %+v", report)
+			}
+		})
+	}
+}
+
+func TestRuntimeHTTPProbeAndTemporaryOverrideCleanup(t *testing.T) {
+	for _, status := range []int{http.StatusOK, http.StatusServiceUnavailable} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/health" {
+					t.Errorf("unexpected HTTP path %q", r.URL.Path)
+				}
+				w.WriteHeader(status)
+			}))
+			defer server.Close()
+			var override string
+			var downCount int
+			command := func(_ context.Context, args ...string) ([]byte, error) {
+				joined := " " + strings.Join(args, " ") + " "
+				switch {
+				case args[0] == "info":
+					return []byte("27"), nil
+				case strings.Contains(joined, " up "):
+					for i, arg := range args {
+						if arg == "-f" && i+1 < len(args) && strings.HasPrefix(args[i+1], os.TempDir()) {
+							override = args[i+1]
+						}
+					}
+					return nil, nil
+				case strings.Contains(joined, " ps "):
+					return []byte(`{"Service":"api","State":"running","Health":"healthy"}`), nil
+				case strings.Contains(joined, " port "):
+					return []byte(strings.TrimPrefix(server.URL, "http://") + "\n"), nil
+				case strings.Contains(joined, " down "):
+					downCount++
+					return nil, nil
+				}
+				return nil, errors.New("unexpected command")
+			}
+			bundle := generator.Bundle{Files: map[string][]byte{"compose.yaml": []byte("services:\n  api:\n    image: example:1\n    expose: [8080/tcp]\n    healthcheck:\n      test: [CMD, true]\n")}}
+			report := NewReport("runtime")
+			runtimeWithCommand(context.Background(), t.TempDir(), bundle, false, []string{"api:8080:/health"}, command, &report)
+			want := Passed
+			if status != http.StatusOK {
+				want = Failed
+			}
+			if !reportHas(report, "HTTP", want) || !reportHas(report, "CLEANUP", Passed) || downCount != 1 {
+				t.Fatalf("unexpected report or cleanup: %+v, down=%d", report, downCount)
+			}
+			if override == "" {
+				t.Fatal("missing temporary HTTP override")
+			}
+			if _, err := os.Stat(override); !os.IsNotExist(err) {
+				t.Fatalf("temporary HTTP override remains: %v", err)
 			}
 		})
 	}

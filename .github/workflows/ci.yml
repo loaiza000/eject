@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   test:
+    timeout-minutes: 20
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -23,6 +24,7 @@ jobs:
         shell: bash
         run: test -z "$(go fmt ./...)"
       - run: go mod download
+      - run: go mod verify
       - run: go vet ./...
       - run: go test ./...
       - if: runner.os == 'Linux'

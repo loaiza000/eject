@@ -12,6 +12,7 @@ import (
 	"unsafe"
 
 	"github.com/loaiza000/eject/internal/generator"
+	"github.com/loaiza000/eject/internal/securefs"
 	"golang.org/x/sys/windows"
 )
 
@@ -49,8 +50,11 @@ func windowsACL(t *testing.T, path string) string {
 
 func assertPrivateACL(t *testing.T, path string) {
 	t.Helper()
+	if err := securefs.CheckPrivate(path); err != nil {
+		t.Fatalf("unsafe ACL on %s: %v", path, err)
+	}
 	acl := windowsACL(t, path)
-	for _, trustee := range []string{";;;WD)", ";;;AU)", "S-1-5-21-3178792518-1144263595-2431071690-1003"} {
+	for _, trustee := range []string{";;;WD)", ";;;AU)"} {
 		if strings.Contains(acl, trustee) {
 			t.Fatalf("unexpected reader on %s: %s", path, acl)
 		}

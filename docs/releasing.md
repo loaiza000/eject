@@ -11,7 +11,7 @@ This is a preparation checklist, not authorization to publish. EJECT v0.1.0 must
 - [ ] Confirm `go build ./...`, `go test ./...`, `go vet ./...`, `go mod verify`, `govulncheck`, and the authorized demo integration on the release commit.
 - [ ] Update `CHANGELOG.md` from `[Unreleased]` to `[0.1.0]` with the approved date, and update `SECURITY.md` support wording.
 - [ ] Confirm the checkout is clean and the release tag points to the approved commit.
-- [ ] Build binaries, license texts and `SHA256SUMS` with Go 1.27.3 using `bash scripts/build-release.sh v0.1.0` on a clean Linux checkout; review names, versions, notices and hashes.
+- [ ] Build binaries, per-platform archives, license texts and `SHA256SUMS` with Go 1.27.3 using `bash scripts/build-release.sh v0.1.0` on a clean Linux checkout; review names, versions, archive contents, executable modes, notices and hashes.
 - [ ] Obtain separate approval for pushing the tag, creating a draft GitHub Release, and publishing it.
 
 ## Review and commit proposal
@@ -27,7 +27,9 @@ Review each commit's diff, especially shared documentation and `go.mod`. Open a 
 
 ## Assets and publication
 
-Use semantic version tags `vMAJOR.MINOR.PATCH`. `v0.1.0` is the first public preview; JSON schema versions are independent of the CLI version. The release script produces six raw binaries (Linux, macOS, Windows on amd64/arm64), license and notice files, and `SHA256SUMS` under `dist/v0.1.0/` from a clean, tagged checkout. The script does not push or publish. Distribute the license and notice files with each binary. Verify downloaded assets with `sha256sum -c SHA256SUMS` in the asset directory.
+Use semantic version tags `vMAJOR.MINOR.PATCH`. `v0.1.0` is the first public preview; JSON schema versions are independent of the CLI version. The release script produces six raw binaries and six `.tar.gz` archives (Linux, macOS, Windows on amd64/arm64), license and notice files, and `SHA256SUMS` under `dist/v0.1.0/` from a clean, tagged checkout. Each archive includes the matching binary, Apache license, and third-party notices and license texts. The script does not push or publish. Verify downloaded assets with `sha256sum -c SHA256SUMS` in the asset directory. Windows users can extract `.tar.gz` with `tar -xzf` from PowerShell.
+
+Before a release tag is authorized, `bash scripts/build-release.sh v0.1.0 --smoke` exercises the same packaging from a clean, immutable HEAD and writes `dist/smoke-v0.1.0/`. These assets are explicitly unpublishable: they do not prove that an approved tag or CI run exists. Review their checksums, archive members, injected `version` output, and native binary execution where the corresponding OS is available. Cross-compilation alone cannot establish native behavior on another platform.
 
 After explicit approval, push the annotated tag, create a **draft** release with assets and reviewed notes, inspect its downloads and checksums, then obtain final publication approval. An example command for that authorized stage is:
 
