@@ -27,7 +27,7 @@ The first commit `6d16d16` contains Phase 0–1 and was published unchanged to `
 
 The follow-up commits harden symlinked output paths, expand HTTP runtime checks, add a nonpublishable packaging smoke test, and preserve executable modes in Unix archives. Review them with the four foundation commits.
 
-Review each commit's diff, especially shared documentation and `go.mod`. Draft pull request #1 is open from `codex/v0.1.0` into `main` for code and security review. The local draft body is `.eject/pr-v0.1.0-draft.md` and is ignored by Git. Treat CI results and the reviewed diff as the release evidence. Do not label a local test run as a successful GitHub Actions run.
+Review each commit's diff, especially shared documentation and `go.mod`. Pull request #1 is open from `codex/v0.1.0` into `main` for code and security review. The local PR body draft is `.eject/pr-v0.1.0-draft.md` and is ignored by Git. Treat the local gate results, the actual CI status and the reviewed diff as separate evidence. Do not label a local test run as a successful GitHub Actions run.
 
 ## Assets and publication
 
