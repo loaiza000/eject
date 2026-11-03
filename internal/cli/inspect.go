@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/loaiza000/eject/internal/discovery/aws"
+	"github.com/loaiza000/eject/internal/securefs"
 	"github.com/spf13/cobra"
 )
 
@@ -63,18 +64,29 @@ func writeOutput(path string, data []byte, force bool) error {
 		return err
 	}
 	dir := filepath.Dir(path)
+	for current := dir; ; current = filepath.Dir(current) {
+		info, err := os.Lstat(current)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		if err == nil && info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("symlink in output path: %s", current)
+		}
+		if next := filepath.Dir(current); next == current {
+			break
+		}
+	}
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(dir, ".eject-*.tmp")
+	if err := rejectSymlinkPath(dir); err != nil {
+		return err
+	}
+	tmp, err := securefs.CreateTemp(dir, ".eject-*.tmp")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tmp.Name())
-	if err := tmp.Chmod(0600); err != nil {
-		tmp.Close()
-		return err
-	}
 	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
 		return err

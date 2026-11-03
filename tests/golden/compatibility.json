@@ -1,0 +1,149 @@
+{
+  "schema_version": "1",
+  "target": "compose",
+  "results": [
+    {
+      "code": "S3_BACKEND_UNSUPPORTED",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "capability": "object_storage",
+      "status": "UNSUPPORTED",
+      "severity": "blocker",
+      "explanation": "No S3-compatible Compose backend mapping is implemented.",
+      "evidence": "s3.get-bucket-encryption:bucket-encryption.json, s3.get-bucket-versioning:bucket-versioning.json",
+      "recommendation": "Select and validate a storage target separately.",
+      "target": "compose"
+    },
+    {
+      "code": "S3_DATA_AND_IAM_REVIEW",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "capability": "objects_and_permissions",
+      "status": "MANUAL_ACTION_REQUIRED",
+      "severity": "blocker",
+      "explanation": "Snapshots do not include objects, IAM permissions or bucket policies.",
+      "evidence": "s3.get-bucket-encryption:bucket-encryption.json, s3.get-bucket-versioning:bucket-versioning.json",
+      "recommendation": "Inventory objects and review access controls outside EJECT.",
+      "target": "compose"
+    },
+    {
+      "code": "S3_ENCRYPTION_REVIEW",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "capability": "encryption",
+      "status": "MANUAL_ACTION_REQUIRED",
+      "severity": "warning",
+      "explanation": "S3 encryption settings have no automatic target equivalence.",
+      "evidence": "encryption_0=AES256",
+      "recommendation": "Review key management and encryption at the chosen destination.",
+      "target": "compose"
+    },
+    {
+      "code": "S3_VERSIONING_REVIEW",
+      "resource": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "capability": "versioning",
+      "status": "MANUAL_ACTION_REQUIRED",
+      "severity": "warning",
+      "explanation": "S3 versioning behavior is not mapped to a target.",
+      "evidence": "versioning=Enabled",
+      "recommendation": "Decide how to preserve version history and delete behavior.",
+      "target": "compose"
+    },
+    {
+      "code": "ECS_ENV_VALUE_REQUIRED",
+      "resource": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "capability": "environment",
+      "status": "MANUAL_ACTION_REQUIRED",
+      "severity": "warning",
+      "explanation": "The snapshot records the variable name but its value was intentionally discarded.",
+      "evidence": "variable=DATABASE_HOST",
+      "recommendation": "Provide the value through a secure local mechanism.",
+      "target": "compose"
+    },
+    {
+      "code": "ECS_IMAGE_REFERENCE",
+      "resource": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "capability": "container_image",
+      "status": "PARTIALLY_SUPPORTED",
+      "severity": "warning",
+      "explanation": "The image reference can be proposed for Compose, but pull access and runtime behavior are unverified.",
+      "evidence": "image=public.ecr.aws/docker/library/nginx:1.27",
+      "recommendation": "Verify image availability, architecture and runtime configuration.",
+      "target": "compose"
+    },
+    {
+      "code": "ECS_PORT_MAPPING",
+      "resource": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "capability": "container_port",
+      "status": "SUPPORTED",
+      "severity": "info",
+      "explanation": "The container port and protocol have a Compose representation; public exposure is not implied.",
+      "evidence": "port_0=8080/tcp",
+      "recommendation": "Decide separately whether this port should be published.",
+      "target": "compose"
+    },
+    {
+      "code": "ECS_SECRET_MAPPING_REQUIRED",
+      "resource": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "capability": "secret",
+      "status": "MANUAL_ACTION_REQUIRED",
+      "severity": "blocker",
+      "explanation": "The ECS secret reference was not retained and has no automatic Compose mapping.",
+      "evidence": "variable=DATABASE_PASSWORD",
+      "recommendation": "Provide a secret through an approved local mechanism; do not put it in the plan.",
+      "target": "compose"
+    },
+    {
+      "code": "RDS_DATA_MIGRATION_REQUIRED",
+      "resource": "aws:us-east-1:database:arn:aws:rds:us-east-1:123456789012:db:demo-db",
+      "capability": "database_data",
+      "status": "MANUAL_ACTION_REQUIRED",
+      "severity": "blocker",
+      "explanation": "RDS metadata contains no database contents; EJECT cannot transfer them.",
+      "evidence": "rds.describe-db-instances:db-instances.json",
+      "recommendation": "Design, test and execute a separate data migration and cutover.",
+      "target": "compose"
+    },
+    {
+      "code": "RDS_POSTGRES_ENGINE",
+      "resource": "aws:us-east-1:database:arn:aws:rds:us-east-1:123456789012:db:demo-db",
+      "capability": "database_engine",
+      "status": "SUPPORTED",
+      "severity": "info",
+      "explanation": "The PostgreSQL engine family has a Compose service representation; version and extensions remain unverified.",
+      "evidence": "engine=postgres",
+      "recommendation": "Check exact version, extensions and configuration.",
+      "target": "compose"
+    },
+    {
+      "code": "ECS_SERVICE_MAPPING",
+      "resource": "aws:us-east-1:service:arn:aws:ecs:us-east-1:123456789012:service/demo/app",
+      "capability": "service",
+      "status": "PARTIALLY_SUPPORTED",
+      "severity": "warning",
+      "explanation": "A Compose service can represent a container workload, but ECS scheduling and scaling semantics are not captured.",
+      "evidence": "ecs.describe-services:services.json",
+      "recommendation": "Review deployment count, scaling, load balancing and networking manually.",
+      "target": "compose"
+    },
+    {
+      "code": "ECS_NETWORK_REVIEW",
+      "resource": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+      "capability": "network",
+      "status": "MANUAL_ACTION_REQUIRED",
+      "severity": "warning",
+      "explanation": "ECS network mode does not map automatically to Compose networking.",
+      "evidence": "network_mode=awsvpc",
+      "recommendation": "Design Compose networks and access controls manually.",
+      "target": "compose"
+    },
+    {
+      "code": "ECS_TASK_MAPPING",
+      "resource": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+      "capability": "task_definition",
+      "status": "PARTIALLY_SUPPORTED",
+      "severity": "warning",
+      "explanation": "Container definitions can inform Compose services; ECS task semantics are not equivalent.",
+      "evidence": "ecs.describe-task-definition:task-definition.json",
+      "recommendation": "Review CPU, memory, roles, logs and task lifecycle outside this plan.",
+      "target": "compose"
+    }
+  ]
+}

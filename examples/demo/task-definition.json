@@ -1,0 +1,15 @@
+{
+  "taskDefinition": {
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1",
+    "family": "eject-demo",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+      {
+        "name": "backend",
+        "image": "eject-demo-api:local",
+        "portMappings": [{"containerPort": 8080, "protocol": "tcp"}],
+        "environment": [{"name": "DATABASE_HOST", "value": "synthetic-value-discarded"}]
+      }
+    ]
+  }
+}

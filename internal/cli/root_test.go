@@ -48,7 +48,7 @@ func TestDoctorJSON(t *testing.T) {
 }
 
 func TestUnknownCommand(t *testing.T) {
-	if _, err := execute(t, "plan"); err == nil {
-		t.Fatal("unimplemented command must fail")
+	if _, err := execute(t, "unknown-command"); err == nil {
+		t.Fatal("unknown command must fail")
 	}
 }

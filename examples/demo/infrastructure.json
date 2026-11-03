@@ -1,0 +1,86 @@
+{
+  "schema_version": "1",
+  "resources": [
+    {
+      "id": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1/backend",
+      "kind": "compute.container",
+      "provider": "aws",
+      "name": "backend",
+      "properties": {
+        "env_name_0": "DATABASE_HOST",
+        "image": "eject-demo-api:local",
+        "port_0": "8080/tcp"
+      },
+      "capabilities": [
+        "container_image"
+      ],
+      "sources": [
+        "ecs.describe-task-definition:task-definition.json"
+      ],
+      "status": "DISCOVERED"
+    },
+    {
+      "id": "aws:us-east-1:database:arn:aws:rds:us-east-1:123456789012:db:eject-demo-db",
+      "kind": "database",
+      "provider": "aws",
+      "name": "eject-demo-db",
+      "properties": {
+        "endpoint": "synthetic-db.invalid",
+        "engine": "postgres",
+        "engine_version": "16.4",
+        "port": "5432"
+      },
+      "capabilities": [
+        "persistent_database"
+      ],
+      "sources": [
+        "rds.describe-db-instances:db-instances.json"
+      ],
+      "missing": [
+        "database contents",
+        "credentials"
+      ],
+      "status": "PARTIAL"
+    },
+    {
+      "id": "aws:us-east-1:service:arn:aws:ecs:us-east-1:123456789012:service/eject-demo/backend",
+      "kind": "compute.service",
+      "provider": "aws",
+      "name": "backend",
+      "sources": [
+        "ecs.describe-services:services.json"
+      ],
+      "status": "DISCOVERED"
+    },
+    {
+      "id": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1",
+      "kind": "compute.task",
+      "provider": "aws",
+      "name": "eject-demo",
+      "properties": {
+        "network_mode": "awsvpc"
+      },
+      "sources": [
+        "ecs.describe-task-definition:task-definition.json"
+      ],
+      "status": "DISCOVERED"
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "aws:us-east-1:service:arn:aws:ecs:us-east-1:123456789012:service/eject-demo/backend",
+      "to": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1",
+      "relation": "runs",
+      "status": "CONFIRMED",
+      "evidence": "ecs.describe-services:services.json services.taskDefinition=arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1"
+    },
+    {
+      "from": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1",
+      "to": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/eject-demo:1/backend",
+      "relation": "contains",
+      "status": "CONFIRMED",
+      "evidence": "ecs.describe-task-definition:task-definition.json taskDefinition.containerDefinitions.name=backend"
+    }
+  ],
+  "findings": []
+}

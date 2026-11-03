@@ -1,0 +1,108 @@
+{
+  "schema_version": "1",
+  "resources": [
+    {
+      "id": "aws:us-east-1:bucket:demo-bucket-synthetic",
+      "kind": "object_storage",
+      "provider": "aws",
+      "name": "demo-bucket-synthetic",
+      "properties": {
+        "encryption_0": "AES256",
+        "mfa_delete": "",
+        "versioning": "Enabled"
+      },
+      "sources": [
+        "s3.get-bucket-encryption:bucket-encryption.json",
+        "s3.get-bucket-versioning:bucket-versioning.json"
+      ],
+      "missing": [
+        "object contents",
+        "bucket policy",
+        "IAM permissions"
+      ],
+      "status": "PARTIAL"
+    },
+    {
+      "id": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "kind": "compute.container",
+      "provider": "aws",
+      "name": "app",
+      "properties": {
+        "env_name_0": "DATABASE_HOST",
+        "image": "public.ecr.aws/docker/library/nginx:1.27",
+        "port_0": "8080/tcp",
+        "secret_name_0": "DATABASE_PASSWORD"
+      },
+      "capabilities": [
+        "container_image"
+      ],
+      "sources": [
+        "ecs.describe-task-definition:task-definition.json"
+      ],
+      "status": "DISCOVERED"
+    },
+    {
+      "id": "aws:us-east-1:database:arn:aws:rds:us-east-1:123456789012:db:demo-db",
+      "kind": "database",
+      "provider": "aws",
+      "name": "demo-db",
+      "properties": {
+        "endpoint": "synthetic-db.example.invalid",
+        "engine": "postgres",
+        "engine_version": "16.4",
+        "port": "5432"
+      },
+      "capabilities": [
+        "persistent_database"
+      ],
+      "sources": [
+        "rds.describe-db-instances:db-instances.json"
+      ],
+      "missing": [
+        "database contents",
+        "credentials"
+      ],
+      "status": "PARTIAL"
+    },
+    {
+      "id": "aws:us-east-1:service:arn:aws:ecs:us-east-1:123456789012:service/demo/app",
+      "kind": "compute.service",
+      "provider": "aws",
+      "name": "app",
+      "sources": [
+        "ecs.describe-services:services.json"
+      ],
+      "status": "DISCOVERED"
+    },
+    {
+      "id": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+      "kind": "compute.task",
+      "provider": "aws",
+      "name": "demo",
+      "properties": {
+        "network_mode": "awsvpc"
+      },
+      "sources": [
+        "ecs.describe-task-definition:task-definition.json"
+      ],
+      "status": "DISCOVERED"
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "aws:us-east-1:service:arn:aws:ecs:us-east-1:123456789012:service/demo/app",
+      "to": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+      "relation": "runs",
+      "status": "CONFIRMED",
+      "evidence": "ecs.describe-services:services.json services.taskDefinition=arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1"
+    },
+    {
+      "from": "aws:us-east-1:task:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1",
+      "to": "aws:us-east-1:container:arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1/app",
+      "relation": "contains",
+      "status": "CONFIRMED",
+      "evidence": "ecs.describe-task-definition:task-definition.json taskDefinition.containerDefinitions.name=app"
+    }
+  ],
+  "findings": []
+}

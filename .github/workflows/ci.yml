@@ -9,9 +9,10 @@ permissions:
 
 jobs:
   test:
+    timeout-minutes: 20
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -23,6 +24,7 @@ jobs:
         shell: bash
         run: test -z "$(go fmt ./...)"
       - run: go mod download
+      - run: go mod verify
       - run: go vet ./...
       - run: go test ./...
       - if: runner.os == 'Linux'
@@ -30,3 +32,35 @@ jobs:
       - run: go build ./...
       - if: runner.os == 'Linux'
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+  fuzz:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go test -run '^$' -fuzz FuzzManifest -fuzztime 5s -parallel 2 ./internal/discovery/aws
+      - run: go test -run '^$' -fuzz FuzzTaskResponse -fuzztime 5s -parallel 2 ./internal/discovery/aws
+      - run: go test -run '^$' -fuzz FuzzGeneratePlan -fuzztime 5s -parallel 2 ./internal/cli
+      - run: go test -run '^$' -fuzz FuzzParseStates -fuzztime 5s -parallel 2 ./internal/verification
+      - run: go test -run '^$' -fuzz FuzzHTTPCheck -fuzztime 5s -parallel 2 ./internal/verification
+
+  docker-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: docker compose version && docker info --format '{{.ServerVersion}}'
+      - run: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o examples/demo/bin/backend ./examples/demo/backend
+      - run: docker build --pull=false -t eject-demo-api:local examples/demo
+      - run: docker pull postgres:16-alpine
+      - run: go test -run '^TestAuthorizedDemoRuntime$' -count=1 ./tests/integration
+        env:
+          EJECT_RUNTIME_TEST: "1"
