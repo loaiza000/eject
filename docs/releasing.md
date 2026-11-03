@@ -1,14 +1,16 @@
 # Release procedure
 
-This is a preparation checklist, not authorization to publish. EJECT v0.1.0 must not be tagged or released until the maintainer approves the final reviewed commit and all required CI jobs pass.
+This is a preparation checklist, not authorization to publish. GitHub Actions jobs currently stop before runner assignment because of an account billing lock. Do not describe those jobs as passing or require payment as a release workaround. The maintainer may approve a v0.1.0 preview after reviewing the manual gate below and explicitly accepting the remaining platform limits. Tagging and publication still require separate authorization.
 
 ## Release gate
 
 - [ ] Review the full diff, untracked files, licenses, `.gitignore`, dependency list, and secret scan.
 - [ ] Review the compatibility matrix and examples; confirm no claim of AWS functional or data equivalence.
-- [ ] Merge a reviewed pull request only after Linux, Windows, macOS, fuzz, Docker integration, and Linux race jobs pass on GitHub Actions. Local cross builds do not substitute for runner results.
-- [ ] Confirm Windows ACL tests and a clean-host audit: new outputs and temporary files exclude inherited readers; legacy permissive projects fail static verification. Inspect any platform or filesystem where the DACL API is unavailable.
-- [ ] Confirm `go build ./...`, `go test ./...`, `go vet ./...`, `go mod verify`, `govulncheck`, and the authorized demo integration on the release commit.
+- [ ] Record the actual GitHub Actions status. If runners remain unavailable, attach local evidence to the pull request: native Windows and Linux build/tests/vet/module verification, Linux race detector, bounded fuzzing, vulnerability scan, and authorized Docker integration. Never label this evidence as successful CI.
+- [ ] Confirm Windows ACL tests: new outputs and temporary files exclude inherited readers, while permissive existing generations fail verification. Review on an independent Windows host when available; if unavailable, record that limit before release.
+- [ ] Confirm Unix mode tests: generated projects and files exclude group and other access, and generation fails before content is written when a mounted filesystem cannot enforce private modes.
+- [ ] Confirm the six cross builds and unpublishable packaging smoke test on a clean commit. Native macOS and arm64 execution remain unverified until a matching host is available; disclose this limitation if those binaries are distributed.
+- [ ] Obtain maintainer review of the diff, golden files, licenses, dependency list, secret scan, local results, and residual platform risk before merging or authorizing a release.
 - [ ] Update `CHANGELOG.md` from `[Unreleased]` to `[0.1.0]` with the approved date, and update `SECURITY.md` support wording.
 - [ ] Confirm the checkout is clean and the release tag points to the approved commit.
 - [ ] Build binaries, per-platform archives, license texts and `SHA256SUMS` with Go 1.27.3 using `bash scripts/build-release.sh v0.1.0` on a clean Linux checkout; review names, versions, archive contents, executable modes, notices and hashes.
