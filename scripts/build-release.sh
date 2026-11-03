@@ -16,7 +16,12 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 2
 fi
 if [[ "$mode" != "--smoke" ]]; then
-  if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "refs/tags/$version^{commit}")" ]]; then
+  if [[ "$(git cat-file -t "refs/tags/$version" 2>/dev/null || true)" != tag ]]; then
+    echo "release builds require an approved annotated tag: $version" >&2
+    exit 2
+  fi
+  approved_commit="$(git rev-parse --verify --quiet "refs/tags/$version^{commit}")"
+  if [[ "$(git rev-parse HEAD)" != "$approved_commit" ]]; then
     echo "HEAD must equal the approved release tag" >&2
     exit 2
   fi
