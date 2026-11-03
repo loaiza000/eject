@@ -77,10 +77,7 @@ func Static(ctx context.Context, project string, bundle generator.Bundle) Report
 	r.Add("PLAN_COHERENCE", Passed, "Embedded plan, resources and rule results were recalculated.")
 	seen := map[string]bool{}
 	markerValid := false
-	aclValid := true
-	if runtime.GOOS == "windows" && securefs.CheckPrivate(project) != nil {
-		aclValid = false
-	}
+	permissionsValid := securefs.CheckPrivate(project) == nil
 	for _, entry := range entries {
 		if err := ctx.Err(); err != nil {
 			r.Add("INTERRUPTED", Failed, "Verification was interrupted.")
@@ -110,8 +107,8 @@ func Static(ctx context.Context, project string, bundle generator.Bundle) Report
 			continue
 		}
 		seen[name] = true
-		if runtime.GOOS == "windows" && securefs.CheckPrivate(filepath.Join(project, name)) != nil {
-			aclValid = false
+		if securefs.CheckPrivate(filepath.Join(project, name)) != nil {
+			permissionsValid = false
 		}
 		f, err := root.Open(name)
 		if err != nil {
@@ -156,11 +153,15 @@ func Static(ctx context.Context, project string, bundle generator.Bundle) Report
 		r.Add("GENERATED_SECRETS", Passed, "No credential pattern found in generated files; private .env content was not inspected.")
 	}
 	if runtime.GOOS == "windows" {
-		if aclValid {
+		if permissionsValid {
 			r.Add("WINDOWS_ACL", Passed, "Generated files grant access only to the current user, LocalSystem and Administrators.")
 		} else {
 			r.Add("WINDOWS_ACL", Failed, "Project or generated file grants access outside the private Windows trustee set.")
 		}
+	} else if permissionsValid {
+		r.Add("UNIX_PERMISSIONS", Passed, "Project and generated files exclude group and other access.")
+	} else {
+		r.Add("UNIX_PERMISSIONS", Failed, "Project or generated file grants group or other access.")
 	}
 	r.Add("APPLICATION_BEHAVIOR", NotVerified, "Static checks do not establish application behavior or data equivalence.")
 	return r

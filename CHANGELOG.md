@@ -16,3 +16,4 @@ All notable changes to this project will be documented here. The format follows 
 
 - Reject symlinked parent directories for JSON output and symlinked destinations with `--force`.
 - Preserve executable modes for Unix binaries inside release archives.
+- Reject permissive Unix generated artifacts and refuse writes when a mounted filesystem cannot enforce private modes.

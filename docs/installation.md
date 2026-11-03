@@ -23,5 +23,6 @@ go build -o eject ./cmd/eject
 ```
 
 Run the [synthetic offline example](../README.md#install-and-run-from-source) after building. Runtime verification is optional and requires Docker, trusted local images, and explicit `--allow-start`; image downloads require separate `--allow-pull` authorization.
+In WSL, clone and write generated projects under the Linux filesystem (for example, your Linux home directory). A Windows-mounted path may report permissive Unix modes even after `chmod`; EJECT refuses to write there when it cannot verify private permissions.
 
 After a release is approved and published, download the archive matching your OS and CPU architecture plus `SHA256SUMS` from GitHub Releases. Compare the archive's SHA-256 hash with its entry in `SHA256SUMS` before extracting. On Linux use `sha256sum ARCHIVE`; on macOS use `shasum -a 256 ARCHIVE`; on Windows use `Get-FileHash ARCHIVE -Algorithm SHA256`. Then run `tar -xzf ARCHIVE` and invoke the included `eject_linux_amd64`, `eject_darwin_arm64`, or `eject_windows_amd64.exe` variant matching your platform. Other supported archives use the corresponding `amd64` or `arm64` suffix. The archives include EJECT's license and third-party notices.

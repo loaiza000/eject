@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"time"
 
@@ -185,6 +186,19 @@ func writeGeneratedFile(root *os.Root, name string, data []byte) error {
 	f, err := root.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
+	}
+	if runtime.GOOS != "windows" {
+		info, err := f.Stat()
+		if err != nil {
+			_ = f.Close()
+			_ = root.Remove(name)
+			return err
+		}
+		if info.Mode().Perm()&0077 != 0 {
+			_ = f.Close()
+			_ = root.Remove(name)
+			return errors.New("filesystem did not enforce private generated file permissions")
+		}
 	}
 	if _, err := f.Write(data); err != nil {
 		_ = f.Close()

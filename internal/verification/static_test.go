@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/loaiza000/eject/internal/domain"
@@ -27,6 +28,11 @@ func staticFixture(t *testing.T) (string, generator.Bundle) {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
+	if runtime.GOOS != "windows" {
+		if err := os.Chmod(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
 	root, err := os.OpenRoot(dir)
 	if err != nil {
 		t.Fatal(err)
