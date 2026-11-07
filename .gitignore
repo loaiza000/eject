@@ -11,3 +11,4 @@
 **/.env
 /.tools/
 /go1.27.3.windows-amd64.zip
+/out/

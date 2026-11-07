@@ -1,44 +1,110 @@
 # Release procedure
 
-This is a preparation checklist, not authorization to publish. GitHub Actions jobs currently stop before runner assignment because of an account billing lock. Do not describe those jobs as passing or require payment as a release workaround. The maintainer may approve a v0.1.0 preview after reviewing the manual gate below and explicitly accepting the remaining platform limits. Tagging and publication still require separate authorization.
+This document is a procedure, not an authorization. Merging, tagging, and publishing each require an explicit maintainer decision. Nothing in the repository publishes automatically.
 
-## Release gate
+## Versioning
 
-- [ ] Review the full diff, untracked files, licenses, `.gitignore`, dependency list, and secret scan.
-- [ ] Review the compatibility matrix and examples; confirm no claim of AWS functional or data equivalence.
-- [ ] Record the actual GitHub Actions status. If runners remain unavailable, attach local evidence to the pull request: native Windows and Linux build/tests/vet/module verification, Linux race detector, bounded fuzzing, vulnerability scan, and authorized Docker integration. Never label this evidence as successful CI.
-- [ ] Confirm Windows ACL tests: new outputs and temporary files exclude inherited readers, while permissive existing generations fail verification. Review on an independent Windows host when available; if unavailable, record that limit before release.
-- [ ] Confirm Unix mode tests: generated projects and files exclude group and other access, and generation fails before content is written when a mounted filesystem cannot enforce private modes.
-- [ ] Confirm the six cross builds and unpublishable packaging smoke test on a clean commit. Native macOS and arm64 execution remain unverified until a matching host is available; disclose this limitation if those binaries are distributed.
-- [ ] Obtain maintainer review of the diff, golden files, licenses, dependency list, secret scan, local results, and residual platform risk before merging or authorizing a release.
-- [ ] Update `CHANGELOG.md` from `[Unreleased]` to `[0.1.0]` with the approved date, and update `SECURITY.md` support wording.
-- [ ] Confirm the checkout is clean and the release tag points to the approved commit.
-- [ ] Build binaries, per-platform archives, license texts and `SHA256SUMS` with Go 1.27.3 using `bash scripts/build-release.sh v0.1.0` on a clean Linux checkout; review names, versions, archive contents, executable modes, notices and hashes.
-- [ ] Obtain separate approval for pushing the tag, creating a draft GitHub Release, and publishing it.
+Tags follow Semantic Versioning: `vMAJOR.MINOR.PATCH`, optionally with a release-candidate suffix such as `v0.1.0-rc.1`. While the major version is `0`, any release may change behavior. Mark releases as **pre-release** on GitHub until the platform matrix includes native evidence for every published binary. JSON schema versions (`schema_version` in inventories, plans, and reports) are independent of the CLI version.
 
-## Review and commit proposal
+## Evidence policy
 
-The first commit `6d16d16` contains Phase 0–1 and was published unchanged to `origin/main` before the review branch was created. Four phase and hardening commits establish the review branch, followed by focused corrective commits; no published history was rewritten:
+GitHub Actions jobs for this repository currently do not start, because the account is locked over a billing issue ("The job was not started because your account is locked due to a billing issue"). That is an administrative block, not a test failure. Do not pay for runners, switch accounts, or edit the workflow to make it appear green. Until CI runs:
 
-1. `feat: add compatibility assessment and versioned migration plans` — Phase 2 rules, plan v2, tests, fixtures, and docs.
-2. `feat: generate guarded Docker Compose proposals` — Phase 3 generator, marker, golden output, tests, and docs.
-3. `feat: verify generated projects and runtime behavior` — Phase 4 static/runtime verification, demo, fault tests, and verification documentation.
-4. `fix: protect Windows artifacts and prepare v0.1.0 release` — protected ACLs, permission tests, CI, security review, and release documentation.
+- Record local evidence (commands and results) in the pull request, and label it as local, never as CI.
+- State which platforms were executed natively and which were only cross-compiled.
+- Keep `.github/workflows/ci.yml` unchanged so CI runs as soon as the account is unblocked.
 
-The follow-up commits harden symlinked output paths, expand HTTP runtime checks, add a nonpublishable packaging smoke test, and preserve executable modes in Unix archives. Review them with the four foundation commits.
+## Gate before tagging
 
-Review each commit's diff, especially shared documentation and `go.mod`. Pull request #1 is open from `codex/v0.1.0` into `main` for code and security review. The local PR body draft is `.eject/pr-v0.1.0-draft.md` and is ignored by Git. Treat the local gate results, the actual CI status and the reviewed diff as separate evidence. Do not label a local test run as a successful GitHub Actions run.
+Run on a clean checkout of the commit to be released.
 
-## Assets and publication
-
-Use semantic version tags `vMAJOR.MINOR.PATCH`. `v0.1.0` is the first public preview; JSON schema versions are independent of the CLI version. The release script produces six raw binaries and six `.tar.gz` archives (Linux, macOS, Windows on amd64/arm64), license and notice files, and `SHA256SUMS` under `dist/v0.1.0/` from a clean, tagged checkout. Each archive includes the matching binary, Apache license, and third-party notices and license texts. The script does not push or publish. Verify downloaded assets with `sha256sum -c SHA256SUMS` in the asset directory. Windows users can extract `.tar.gz` with `tar -xzf` from PowerShell.
-
-Before a release tag is authorized, `bash scripts/build-release.sh v0.1.0 --smoke` exercises the same packaging from a clean, immutable HEAD and writes `dist/smoke-v0.1.0/`. These assets are explicitly unpublishable: they do not prove that an approved tag or CI run exists. Review their checksums, archive members, injected `version` output, and native binary execution where the corresponding OS is available. Cross-compilation alone cannot establish native behavior on another platform.
-
-After explicit approval, push the annotated tag, create a **draft** release with assets and reviewed notes, inspect its downloads and checksums, then obtain final publication approval. An example command for that authorized stage is:
+Windows (Git Bash) and Linux (WSL2 or native):
 
 ```sh
-gh release create v0.1.0 dist/v0.1.0/* --draft --verify-tag --title "EJECT v0.1.0" --notes-file docs/release-notes-v0.1.0.md
+go build ./...
+go vet ./...
+go mod verify
+test -z "$(gofmt -l $(git ls-files '*.go'))"
+go test -count=1 ./...
 ```
 
-The draft command does not publish the release. Publishing later is a separate action. Do not create the tag, draft, or release as part of routine development.
+Linux only:
+
+```sh
+CGO_ENABLED=1 go test -race -count=1 ./...
+go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+for f in FuzzManifest FuzzTaskResponse; do go test -run '^$' -fuzz "^$f\$" -fuzztime 30s ./internal/discovery/aws; done
+go test -run '^$' -fuzz '^FuzzGeneratePlan$' -fuzztime 30s ./internal/cli
+for f in FuzzParseStates FuzzHTTPCheck; do go test -run '^$' -fuzz "^$f\$" -fuzztime 30s ./internal/verification; done
+```
+
+Docker integration (local images only: build `eject-demo-api:local` as described in [the demo](../examples/demo/README.md), and have `postgres:16-alpine` present):
+
+```sh
+EJECT_RUNTIME_TEST=1 go test -run '^TestAuthorizedDemoRuntime$' -count=1 ./tests/integration
+```
+
+Each successful run leaves one named volume `eject-verify-<id>_..._data`. Remove these after review with `docker volume rm <name>`; never use a broad prune.
+
+Packaging smoke test. This requires GNU tar, so run it on Linux or WSL from a clean checkout; it writes `dist/smoke-<version>/`, which is ignored by Git and **not publishable**:
+
+```sh
+bash scripts/build-release.sh v0.1.0 --smoke
+(cd dist/smoke-v0.1.0 && sha256sum -c SHA256SUMS)
+```
+
+Check the archive members (`tar -tvzf`), the executable modes (`-rwxr-xr-x` for Unix binaries), and the `version` output of the binaries you can run natively.
+
+## Release steps (maintainer)
+
+1. **Review and merge** the release pull request into `main` on GitHub, after reading the diff and the local evidence in its description.
+
+2. **Update the local `main`** and confirm a clean tree:
+
+   ```sh
+   git switch main
+   git pull --ff-only origin main
+   git status --short          # must print nothing
+   ```
+
+3. **Create the annotated tag** on the merged commit (local only for now):
+
+   ```sh
+   git tag -a v0.1.0 -m "EJECT v0.1.0"
+   ```
+
+4. **Build the release assets** on Linux or WSL with Go 1.27.3. The script refuses to run unless `HEAD` equals the annotated tag and the tree is clean:
+
+   ```sh
+   bash scripts/build-release.sh v0.1.0
+   (cd dist/v0.1.0 && sha256sum -c SHA256SUMS)
+   ```
+
+5. **Push the tag**. This is the first public, outward-facing step:
+
+   ```sh
+   git push origin v0.1.0
+   ```
+
+6. **Create a draft pre-release** with the assets. A draft is not public:
+
+   ```sh
+   gh release create v0.1.0 dist/v0.1.0/* --draft --prerelease --verify-tag \
+     --title "EJECT v0.1.0" --notes-file docs/release-notes-v0.1.0.md
+   ```
+
+7. **Inspect the draft** on GitHub. Download one archive and `SHA256SUMS`, then follow [installation](installation.md) to confirm that the checksum and `eject version` match.
+
+8. **Publish**:
+
+   ```sh
+   gh release edit v0.1.0 --draft=false
+   ```
+
+If a defect is found after step 5, do not move or delete a pushed tag. Fix it and release `v0.1.1`.
+
+## Optional repository settings
+
+- Enable **Private vulnerability reporting** (Settings → Code security) so the process in `SECURITY.md` works.
+- Add topics such as `cli`, `docker-compose`, `aws`, `cloud-migration`, `golang`, and `offline-first`.
+- Documentation can later be published free of charge with GitHub Pages from the `docs/` folder (Settings → Pages → Deploy from branch → `main` / `docs`). A custom domain such as `eject.dloaiza.dev` needs a DNS `CNAME` record pointing to `loaiza000.github.io` and the domain entered in the Pages settings. That is a separate decision and is not configured here.

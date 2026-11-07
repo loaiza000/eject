@@ -1,6 +1,6 @@
 # Documentation
 
-This Markdown directory is the authoritative documentation for the current local CLI. It can be published as static content in the future without changing the Go product or requiring a hosted service now.
+This Markdown directory is the authoritative documentation for the EJECT CLI. It needs no build step and can later be published for free with GitHub Pages from the `docs/` folder; see [optional repository settings](releasing.md#optional-repository-settings).
 
 - [Installation](installation.md), [CLI reference](cli.md), [configuration](configuration.md), and [development](development.md)
 - [Architecture](architecture.md), [compatibility](compatibility.md), [planning](planning.md), and [generation](generation.md)
