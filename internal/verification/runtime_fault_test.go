@@ -31,6 +31,7 @@ func TestRuntimeFailurePathsAndIsolation(t *testing.T) {
 	}{
 		{"healthy", "", "POSTGRES_QUERY", true},
 		{"daemon", "info", "DOCKER", false},
+		{"unresolved-config", "config", "RUNTIME_CONFIG", false},
 		{"startup", "up", "STARTUP", true},
 		{"unhealthy", "unhealthy", "HEALTHCHECK", true},
 		{"postgres-readiness", "pg_isready", "POSTGRES_CONNECTIVITY", true},
@@ -47,6 +48,12 @@ func TestRuntimeFailurePathsAndIsolation(t *testing.T) {
 						return nil, errors.New("daemon")
 					}
 					return []byte("27"), nil
+				}
+				if strings.HasSuffix(joined, " config --quiet") {
+					if tc.fail == "config" {
+						return nil, errors.New("required variable POSTGRES_PASSWORD is missing a value")
+					}
+					return nil, nil
 				}
 				if strings.Contains(joined, " up ") {
 					if tc.fail == "up" {
@@ -109,6 +116,9 @@ func TestRuntimeFailurePathsAndIsolation(t *testing.T) {
 						t.Fatal("persistent volume deletion requested")
 					}
 				}
+				if tc.fail == "config" && strings.Contains(joined, " up ") {
+					t.Fatal("containers started after an unresolved configuration")
+				}
 				if strings.Contains(joined, " up ") && !strings.Contains(joined, "--pull never") {
 					t.Fatal("unexpected image pull authorization")
 				}
@@ -167,6 +177,8 @@ func TestRuntimeHTTPProbeAndTemporaryOverrideCleanup(t *testing.T) {
 				switch {
 				case args[0] == "info":
 					return []byte("27"), nil
+				case strings.HasSuffix(joined, " config --quiet "):
+					return nil, nil
 				case strings.Contains(joined, " up "):
 					for i, arg := range args {
 						if arg == "-f" && i+1 < len(args) && strings.HasPrefix(args[i+1], os.TempDir()) {
