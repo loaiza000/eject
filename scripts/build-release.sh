@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${1:?usage: scripts/build-release.sh vX.Y.Z [--smoke]}"
+version="${1:?usage: scripts/build-release.sh vX.Y.Z[-rc.N] [--smoke]}"
 mode="${2:-}"
 if [[ -n "$mode" && "$mode" != "--smoke" ]] || (( $# > 2 )); then
-  echo "usage: scripts/build-release.sh vX.Y.Z [--smoke]" >&2
+  echo "usage: scripts/build-release.sh vX.Y.Z[-rc.N] [--smoke]" >&2
   exit 2
 fi
-if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "expected a stable semantic version tag (vX.Y.Z)" >&2
+if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+  echo "expected a semantic version tag (vX.Y.Z or vX.Y.Z-rc.N)" >&2
   exit 2
 fi
 if [[ -n "$(git status --porcelain)" ]]; then
@@ -59,21 +59,25 @@ for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 wi
   output="$outdir/$binary"
   GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -buildvcs=false \
     -ldflags="-X main.version=$version" -o "$output" ./cmd/eject
+  # Inside each archive the executable is plainly `eject` (or `eject.exe`), so
+  # users can extract and run it without renaming. Raw binaries keep the
+  # platform suffix because they share one release directory.
   package="$outdir/.package"
   mkdir "$package"
-  cp "$output" "$package/$binary"
+  member="eject${suffix}"
+  cp "$output" "$package/$member"
   for file in "${legal[@]}"; do cp "$outdir/$file" "$package/$file"; done
   archive_tar="$(pwd)/$outdir/.package.tar"
   binary_mode=755
   if [[ "$os" == windows ]]; then binary_mode=644; fi
   (
     cd "$package"
-    tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner --mode="$binary_mode" -cf "$archive_tar" "$binary"
+    tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner --mode="$binary_mode" -cf "$archive_tar" "$member"
     tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner --mode=644 -rf "$archive_tar" "${legal[@]}"
   )
   gzip -n < "$archive_tar" > "$outdir/eject_${version}_${os}_${arch}.tar.gz"
   rm "$archive_tar"
-  rm "$package/$binary"
+  rm "$package/$member"
   for file in "${legal[@]}"; do rm "$package/$file"; done
   rmdir "$package"
 done
