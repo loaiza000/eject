@@ -22,6 +22,6 @@ aws s3api get-bucket-versioning --bucket demo-bucket --region us-east-1 > bucket
 aws s3api get-bucket-encryption --bucket demo-bucket --region us-east-1 > bucket-encryption.json
 ```
 
-Review exports before sharing them. They may contain credentials, endpoint addresses, or other sensitive infrastructure information even though EJECT only emits a subset of fields. A missing S3 encryption response or absent metadata does not prove a bucket is unencrypted. RDS metadata does not contain database contents. ECS environment values and secret references are not written to the inventory; only variable names are recorded.
+Review exports before sharing them. They may contain credentials, endpoint addresses, or other sensitive infrastructure information even though EJECT only emits a subset of fields. A missing S3 encryption response or absent metadata does not prove a bucket is unencrypted. RDS metadata does not contain database contents. ECS environment values and secret references are not written to the inventory; only variable names are recorded. A port mapping without `protocol` is recorded as `tcp`, the ECS default; protocols other than `tcp` and `udp` are rejected.
 
 The output `schema_version: "1"` contains sorted `resources`, `dependencies`, and `findings`. Dependencies have `CONFIRMED` status only when a source field explicitly names the target resource. References without supplied target snapshots produce a `MISSING_REFERENCE` finding. Other relationships are not inferred. Changes to this schema will be versioned.

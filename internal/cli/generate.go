@@ -298,11 +298,7 @@ func validateComposeWithDocker(ctx context.Context, path string) error {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, docker, "compose", "-f", path, "config", "--no-interpolate", "--quiet")
-	for _, key := range []string{"PATH", "APPDATA", "LOCALAPPDATA", "USERPROFILE", "PROGRAMDATA", "HOME", "DOCKER_CONFIG", "DOCKER_CLI_PLUGIN_EXTRA_DIRS"} {
-		if value, ok := os.LookupEnv(key); ok {
-			cmd.Env = append(cmd.Env, key+"="+value)
-		}
-	}
+	cmd.Env = dockerEnvironment()
 	probe := exec.CommandContext(ctx, docker, "compose", "version", "--short")
 	probe.Env = cmd.Env
 	if _, err := probe.Output(); err != nil {

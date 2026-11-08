@@ -73,7 +73,15 @@ func parseTask(file *os.File, e entry, out *domain.Infrastructure) error {
 			if p.ContainerPort < 1 || p.ContainerPort > 65535 {
 				return fmt.Errorf("invalid container port %d", p.ContainerPort)
 			}
-			properties["port_"+strconv.Itoa(j)] = strconv.Itoa(p.ContainerPort) + "/" + p.Protocol
+			// ECS defaults an omitted protocol to tcp.
+			protocol := p.Protocol
+			if protocol == "" {
+				protocol = "tcp"
+			}
+			if protocol != "tcp" && protocol != "udp" {
+				return fmt.Errorf("unsupported port protocol %q", p.Protocol)
+			}
+			properties["port_"+strconv.Itoa(j)] = strconv.Itoa(p.ContainerPort) + "/" + protocol
 		}
 		for j, v := range c.Environment {
 			if v.Name == "" {

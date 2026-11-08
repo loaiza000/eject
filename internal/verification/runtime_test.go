@@ -36,11 +36,25 @@ func TestParseStates(t *testing.T) {
 	if err != nil || states["api"].Health != "healthy" {
 		t.Fatalf("states=%+v error=%v", states, err)
 	}
-	if _, err := parseStates([]byte("[]")); err == nil {
-		t.Fatal("invalid state accepted")
+	// Compose releases before 2.21 print a single JSON array.
+	states, err = parseStates([]byte(`[{"Service":"api","State":"running","Health":"healthy"},{"Service":"db","State":"running","Health":"starting"}]`))
+	if err != nil || len(states) != 2 || states["api"].Health != "healthy" || states["db"].Health != "starting" {
+		t.Fatalf("array states=%+v error=%v", states, err)
 	}
-	if _, err := parseStates([]byte("{\"Service\":\"api\",\"State\":\"running\"}\n{\"Service\":\"api\",\"State\":\"exited\"}")); err == nil {
-		t.Fatal("duplicate service state accepted")
+	states, err = parseStates([]byte("[]"))
+	if err != nil || len(states) != 0 {
+		t.Fatalf("empty array states=%+v error=%v", states, err)
+	}
+	for _, input := range []string{
+		"{\"Service\":\"api\",\"State\":\"running\"}\n{\"Service\":\"api\",\"State\":\"exited\"}",
+		`[{"Service":"api","State":"running"},{"Service":"api","State":"exited"}]`,
+		`[{"State":"running"}]`,
+		`[{"Service":"api"}`,
+		`{"Service":"api"} trailing`,
+	} {
+		if _, err := parseStates([]byte(input)); err == nil {
+			t.Fatalf("invalid state report accepted: %s", input)
+		}
 	}
 }
 

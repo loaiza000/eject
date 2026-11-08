@@ -129,9 +129,20 @@ func composeAvailable(ctx context.Context) bool {
 	return cmd.Run() == nil
 }
 
+// dockerEnvironmentKeys lists the only variables passed to Docker. Everything
+// else, including COMPOSE_* settings and variables that Compose could
+// interpolate into the project, is withheld so values come from the project's
+// private .env file. The DOCKER_HOST family selects the daemon (rootless
+// Docker, remote contexts, Colima) and does not affect interpolation.
+var dockerEnvironmentKeys = []string{
+	"PATH", "APPDATA", "LOCALAPPDATA", "USERPROFILE", "PROGRAMDATA", "HOME",
+	"DOCKER_CONFIG", "DOCKER_CLI_PLUGIN_EXTRA_DIRS",
+	"DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH",
+}
+
 func dockerEnvironment() []string {
 	var env []string
-	for _, key := range []string{"PATH", "APPDATA", "LOCALAPPDATA", "USERPROFILE", "PROGRAMDATA", "HOME", "DOCKER_CONFIG", "DOCKER_CLI_PLUGIN_EXTRA_DIRS"} {
+	for _, key := range dockerEnvironmentKeys {
 		if value, ok := os.LookupEnv(key); ok {
 			env = append(env, fmt.Sprintf("%s=%s", key, value))
 		}

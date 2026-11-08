@@ -137,6 +137,48 @@ func TestOperationValidation(t *testing.T) {
 	}
 }
 
+func TestTaskPortProtocol(t *testing.T) {
+	const taskARN = "arn:aws:ecs:us-east-1:123456789012:task-definition/demo:1"
+	task := func(portMapping string) string {
+		return `{"taskDefinition":{"taskDefinitionArn":"` + taskARN + `","family":"demo","containerDefinitions":[{"name":"app","image":"nginx:1.27","portMappings":[` + portMapping + `]}]}}`
+	}
+	inspect := func(t *testing.T, response string) (map[string]string, error) {
+		t.Helper()
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, "task.json"), []byte(response), 0600); err != nil {
+			t.Fatal(err)
+		}
+		manifest := `{"schema_version":"1","exports":[{"operation":"ecs.describe-task-definition","file":"task.json","resource":"` + taskARN + `","region":"us-east-1"}]}`
+		path := filepath.Join(dir, "manifest.json")
+		if err := os.WriteFile(path, []byte(manifest), 0600); err != nil {
+			t.Fatal(err)
+		}
+		ir, err := Inspect(context.Background(), path)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range ir.Resources {
+			if r.Kind == "compute.container" {
+				return r.Properties, nil
+			}
+		}
+		t.Fatal("container not found")
+		return nil, nil
+	}
+	// ECS documents tcp as the default when protocol is omitted.
+	props, err := inspect(t, task(`{"containerPort":8080}`))
+	if err != nil || props["port_0"] != "8080/tcp" {
+		t.Fatalf("omitted protocol: props=%v error=%v", props, err)
+	}
+	props, err = inspect(t, task(`{"containerPort":53,"protocol":"udp"}`))
+	if err != nil || props["port_0"] != "53/udp" {
+		t.Fatalf("udp protocol: props=%v error=%v", props, err)
+	}
+	if _, err := inspect(t, task(`{"containerPort":8080,"protocol":"sctp"}`)); err == nil || !strings.Contains(err.Error(), "unsupported port protocol") {
+		t.Fatalf("unknown protocol error = %v", err)
+	}
+}
+
 func TestMissingTaskReference(t *testing.T) {
 	const serviceARN = "arn:aws:ecs:us-east-1:123456789012:service/demo/app"
 	dir := t.TempDir()

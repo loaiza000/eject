@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/loaiza000/eject/internal/verification"
@@ -45,6 +46,27 @@ func TestVerifyStaticAndAuthorization(t *testing.T) {
 	report, err = readVerify(t, project, "--runtime")
 	if err != nil || report.Outcome != verification.Skipped || !hasCheck(report, "RUNTIME_AUTHORIZATION", verification.Skipped) {
 		t.Fatalf("runtime without authorization=%+v error=%v", report, err)
+	}
+}
+
+func TestDockerEnvironmentAllowList(t *testing.T) {
+	t.Setenv("DOCKER_HOST", "unix:///run/user/1000/docker.sock")
+	t.Setenv("DOCKER_CONTEXT", "rootless")
+	t.Setenv("COMPOSE_PROJECT_NAME", "someone-else")
+	t.Setenv("POSTGRES_PASSWORD", "must-not-reach-compose")
+	env := map[string]bool{}
+	for _, entry := range dockerEnvironment() {
+		env[entry] = true
+	}
+	for _, want := range []string{"DOCKER_HOST=unix:///run/user/1000/docker.sock", "DOCKER_CONTEXT=rootless"} {
+		if !env[want] {
+			t.Fatalf("daemon selection variable not forwarded: %s", want)
+		}
+	}
+	for entry := range env {
+		if strings.HasPrefix(entry, "COMPOSE_PROJECT_NAME=") || strings.HasPrefix(entry, "POSTGRES_PASSWORD=") {
+			t.Fatalf("interpolation-sensitive variable forwarded: %s", entry)
+		}
 	}
 }
 

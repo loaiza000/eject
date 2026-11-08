@@ -111,6 +111,15 @@ func runtimeWithCommand(ctx context.Context, project string, bundle generator.Bu
 	if _, err := os.Stat(filepath.Join(project, ".env")); err == nil {
 		base = append(base, "--env-file", filepath.Join(project, ".env"))
 	}
+	// Resolve the project, including required variables from the private .env,
+	// before anything starts. A configuration Compose cannot resolve creates no
+	// containers, and `down` would fail on it too, so stop before scheduling a
+	// cleanup that could only report a misleading failure.
+	if _, err := command(ctx, append(append([]string{}, base...), "config", "--quiet")...); err != nil {
+		report.Add("RUNTIME_CONFIG", Failed, "Compose could not resolve the project; check that the private .env supplies every required value. No containers were started.")
+		return
+	}
+	report.Add("RUNTIME_CONFIG", Passed, "Compose resolved the project with the private .env values.")
 	pull := "never"
 	if allowPull {
 		pull = "missing"
@@ -276,16 +285,31 @@ func writeHTTPOverride(checks []httpCheck) (string, error) {
 	}
 	return f.Name(), nil
 }
+
+// parseStates accepts both `docker compose ps --format json` layouts: one JSON
+// object per line (Compose 2.21 and later) and a single JSON array (earlier
+// Compose v2 releases, still shipped by some Linux distributions).
 func parseStates(data []byte) (map[string]containerState, error) {
-	states := map[string]containerState{}
-	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		var state containerState
-		if err := json.Unmarshal([]byte(line), &state); err != nil {
+	var list []containerState
+	trimmed := strings.TrimSpace(string(data))
+	if strings.HasPrefix(trimmed, "[") {
+		if err := json.Unmarshal([]byte(trimmed), &list); err != nil {
 			return nil, err
 		}
+	} else {
+		for _, line := range strings.Split(trimmed, "\n") {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			var state containerState
+			if err := json.Unmarshal([]byte(line), &state); err != nil {
+				return nil, err
+			}
+			list = append(list, state)
+		}
+	}
+	states := map[string]containerState{}
+	for _, state := range list {
 		if state.Service == "" {
 			return nil, errors.New("missing service")
 		}
